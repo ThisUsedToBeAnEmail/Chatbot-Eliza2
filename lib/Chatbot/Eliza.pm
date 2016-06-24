@@ -11,12 +11,11 @@ use experimental qw[
 	lexical_subs
 ];
 
-## Soon I wont need to be setting all of these
-has 'fields' => (
+has 'options' => (
 	is => 'rw',
 	lazy => 1,
 	default => sub {
-		return Chatbot::Eliza::Fields->new();
+		return Chatbot::Eliza::Option->new();
 	}
 );
 
@@ -24,8 +23,16 @@ has 'eliza' => (
 	is 	=> 'rw',
 	lazy => 1,
 	default => sub { 
-		Chatbot::Eliza::Build->new($self->fields);	
+		Chatbot::Eliza::Brain->new(options => $self->options);	
 	}
 );
+
+sub command_interface {
+
+}
+
+sub interact {
+
+}
 
 1; # End of Chatbot::Eliza2

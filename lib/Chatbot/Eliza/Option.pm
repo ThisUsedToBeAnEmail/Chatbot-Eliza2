@@ -1,4 +1,4 @@
-package Chatbot::Eliza::Fields;
+package Chatbot::Eliza::Option;
 
 use v5.24;
 
