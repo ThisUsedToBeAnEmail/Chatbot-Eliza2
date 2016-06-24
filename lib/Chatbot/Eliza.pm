@@ -20,20 +20,12 @@ has 'fields' => (
 	}
 );
 
-has 'data' => (
-	is => 'rw',
-	lazy => 1,
-	default => 'data.data',
-);
-
-has 'build_eliza' => (
+has 'eliza' => (
 	is 	=> 'rw',
 	lazy => 1,
-	builder => 'build_eliza',
+	default => sub { 
+		Chatbot::Eliza::Build->new($self->fields);	
+	}
 );
-
-sub build_eliza ($self) {
-	return Chatbot::Eliza::Build->new($self->fields);
-}
 
 1; # End of Chatbot::Eliza2
