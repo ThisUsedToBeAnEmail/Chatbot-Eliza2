@@ -14,28 +14,30 @@ has 'script_file' => (
     default => q{},
 );
 
-has 'data' => (
-    is => 'rw',
-    lazy => 1,
-    default => sub {
-        return {
-            quit => [ ],
-            initial => [ ],
-            final => [ ],
-            decomp => { },
-            reasmb => { },
-            reasmb_for_memory => { },
-            pre => { },
-            post => { },
-            synon => { },
-            key => { },
-        };
-    },
+my %data = (
+    quit => sub { [ ] },
+    initial => sub { [ ] },
+    final => sub { [ ] },
+    decomp => sub { { } },
+    reasmb => sub { { } },
+    reasmb_for_memory => sub { { } },
+    pre => sub { { } },
+    post => sub { { } },
+    synon => sub { { } },
+    key => sub { { } },
+    unique_words => sub { { } },
 );
+
+while ( my( $key, $value ) = each %data ) {
+    has $key => (
+        is => 'rw',
+        lazy => 1,
+        default => $value,
+    );
+}
 
 sub parse_script_data ($self) {
     my @script_lines = $self->_open_script_file($self->script_file);
-    my $data = $self->data;
     my ($thiskey, $decomp);
     # Examine each line of the script data
     for my $line (@script_lines) {
@@ -43,6 +45,9 @@ sub parse_script_data ($self) {
         # Skip comments and lines with only whitespace
         next if $line =~ /^[\s*#|\s*]$/;
         
+        # mehhh may be slow who knows
+        $self->_unique_words($line);
+
         # Split entrytype and entry, using a colon as the delimiter
         my ($entry_type, $entry) = split /:/, $line;
         # remove the whitespace
@@ -50,35 +55,42 @@ sub parse_script_data ($self) {
         $entry = _trim_string($entry);
     
         for ($entry_type) {
-            /quit|initial|final/ and do { push $data->{$_}->@*, $entry; last; };
+            /quit|initial|final/ and do { push $self->$_->@*, $entry; last; };
             /decomp/ and do {
                 die "$0: error parsing script: decomp rule with no keyword. \n"
                     unless $thiskey;
                 $decomp = join($;, $thiskey, $entry);
-                push $data->{$_}->{$thiskey}->@*, $entry;
+                push $self->$_->{$thiskey}->@*, $entry;
                 last;
             };
             /reasmb|reasmb_for_mempory/ and do {
                 die "$0: error parsing scrip reassembly rule with no decomposition rule" 
                     unless $decomp;
-                push $data->{$_}->{$decomp}->@*, $entry;
+                push $self->$_->{$decomp}->@*, $entry;
                 last;
             };
             # everything else we have a key - split on first space
             my ($key, $value) = split(/\s/, $entry);
-            /pre|post/ and do { $data->{$_}->{$key} = $value; last; };
-            /synon/ and do { $data->{$_}->{$key} = [ split /\ /, $value ]; last; };
+            /pre|post/ and do { $self->$_->{$key} = $value; last; };
+            /synon/ and do { $self->$_->{$key} = [ split /\ /, $value ]; last; };
             /key/ and do { 
                 $thiskey = $key;
                 $decomp = "";
-                $data->{$_}->{$key} = $value; 
+                $self->$_->{$key} = $value; 
                 last; 
             };
         }
     }
-    $self->data($data);
-    return $data;
 }
+
+sub _unique_words($self, $line) {
+    $line =~ s/[^a-zA-Z\'\s+]//g;
+    my @words = split(' ', $line); 
+    foreach my $word ( @words ) {
+        $self->unique_words->{$word}++;
+    }
+    return;
+};
 
 sub _trim_string ($string) {
     $string =~ s/^\s+|\s+$//g;

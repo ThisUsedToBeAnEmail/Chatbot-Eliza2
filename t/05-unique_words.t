@@ -14,10 +14,7 @@ BEGIN {
 }
 
 subtest 'attributes exist' => sub {
-	update_options({
-		options => {
-			name => 'Lnation'
-		},
+	unique_words({
 		att => 'name',
 		value => 'Lnation'
 	});
@@ -25,10 +22,11 @@ subtest 'attributes exist' => sub {
 
 done_testing();
 
-sub update_options ($args) {
+sub unique_words ($args) {
 	my $parser = Chatbot::Eliza::ScriptParser->new();
-	my $data = $parser->parse_script_data;
+	my @data = $parser->_unique_words("hello hello world's blah1");
 	use Data::Dumper;
-    warn Dumper $parser->pre;
+    
+    warn Dumper $parser->unique_words; 
     # check its value
 }

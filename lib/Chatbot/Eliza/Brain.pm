@@ -31,6 +31,12 @@ It uses the array C<%pre>, which is created during the parse of the script.
 
 sub preprocess ($self, $string) {
     my @words = split / /, $string;
+   
+    # lets use CPAN
+    my $data = $self->options->data;
+    my @unique_words = $data->unique_words;
+    use Data::Dumper;
+    warn Dumper @unique_words;
     
     return join ' ', @words;
 }
