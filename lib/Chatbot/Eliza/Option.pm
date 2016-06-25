@@ -4,6 +4,10 @@ use v5.24;
 
 use Moo;
 
+use experimental qw[
+    signatures
+];
+
 my %fields = (
     name => 'Eliza',
     script_file => '',
@@ -36,6 +40,16 @@ while ( my( $key, $value ) = each %fields ) {
         lazy => 1,
         default => $value,
     );
+}
+
+has 'script_data' => (
+    is => 'ro',
+    lazy => 1,
+    builder => 'build_script_data'
+);
+
+sub build_script_data ($self) {
+   return Chatbot::Eliza::ScriptParser->new(script_file => $self->script_file);    
 }
 
 1; # End of Chatbot::Eliza2

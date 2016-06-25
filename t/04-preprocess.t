@@ -6,12 +6,11 @@ use Chatbot::Eliza;
 use Test::More 0.88;
 use feature 'say';
 
+BEGIN {
+	use_ok( 'Chatbot::Eliza::Option' ) || print "Bail out!\n";
+    use_ok( 'Chatbot::Eliza::Brain' ) || print "Bail out!\n";
+}
 # doesn't store memory so it's actually pretty useless
-my $bot = new Chatbot::Eliza {
-	name => "Eliza",
-	memory_on => 0,
-	prompts_on => 1,
-};
 
 subtest 'say goodbye in multiple ways' => sub {
 	goodbye_eliza({
@@ -44,8 +43,10 @@ done_testing();
 
 sub goodbye_eliza {
 	my $args = shift;
-	
-	my $reply = $bot->preprocess($args->{text});
+
+    my $options = Chatbot::Eliza::Option->new();
+    my $eliza = Chatbot::Eliza::Brain->new(options => $options);
+	my $reply = $eliza->preprocess($args->{text});
 	# reply will always have a value
 	ok($reply);
 	is($reply, $args->{expected}, "we went through preprocess - $reply");
