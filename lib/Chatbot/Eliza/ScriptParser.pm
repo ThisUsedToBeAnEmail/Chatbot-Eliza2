@@ -19,15 +19,16 @@ has 'data' => (
 	lazy => 1,
 	default => sub {
 		return {
+			quit => [ ],
 			initial => [ ],
 			final => [ ],
 			decomp => { },
 			reasmb => { },
 			reasmb_for_memory => { },
-			pre => q{},
-			post => q{},
-			synon => [ ],
-			key => q{},
+			pre => { },
+			post => { },
+			synon => { },
+			key => { },
 		};
 	},
 );
@@ -35,6 +36,7 @@ has 'data' => (
 sub parse_script_data ($self) {
 	my @script_lines = $self->_open_script_file($self->script_file);
 	my $data = $self->data;
+	my ($thiskey, $decomp);
 	# Examine each line of the script data
 	for my $line (@script_lines) {
 			
@@ -46,31 +48,36 @@ sub parse_script_data ($self) {
 		# remove the whitespace
 		$entry_type = _trim_string($entry_type);
 		$entry = _trim_string($entry);
-		
-		if (any(qw(initial final)) eq $entry_type){
-			push $data->{$entry_type}->@*, $entry;
-			next;
-		}
 	
-		my ($key, $value) = split /^\s/, $entry;
-		# could error here we defo don't want to die :)
-		next unless $key && $value;
-
-		if (any(qw(decomp reasmb reasm_for_memory)) eq $entry_type) {
-			push $data->{$entry_type}->{$key}->@*, $value;
-			next;
-		};
-	
-		if(any(qw(pre post key)) eq $entry_type) {
-			$data->{$entry_type}->{$key} = $value;
-			next;
-		};
-
-		if ($entry_type eq 'synon') {
-			$data->{$entry_type}->{$key} = split /\ /, $value;
-			next;
+		for ($entry_type) {
+			/quit|initial|final/ and do { push $data->{$_}->@*, $entry; last; };
+			/decomp/ and do {
+				die "$0: error parsing script: decomp rule with no keyword. \n"
+					unless $thiskey;
+				$decomp = join($;, $thiskey, $entry);
+				push $data->{$_}->{$thiskey}->@*, $entry;
+				last;
+			};
+			/reasmb|reasmb_for_mempory/ and do {
+				die "$0: error parsing scrip reassembly rule with no decomposition rule" 
+					unless $decomp;
+				push $data->{$_}->{$decomp}->@*, $entry;
+				last;
+			};
+			# everything else we have a key - split on first space
+			my ($key, $value) = split(/\s/, $entry);
+			/pre|post/ and do { $data->{$_}->{$key} = $value; last; };
+			/synon/ and do { $data->{$_}->{$key} = [ split /\ /, $value ]; last; };
+			/key/ and do { 
+				$thiskey = $key;
+				$decomp = "";
+				$data->{$_}->{$key} = $value; 
+				last; 
+			};
 		}
 	}
+	$self->data($data);
+	return $data;
 }
 
 sub _trim_string ($string) {
