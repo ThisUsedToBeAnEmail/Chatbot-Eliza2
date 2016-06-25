@@ -19,7 +19,7 @@ subtest 'attributes exist' => sub {
 		value => 'Lnation'
 	});
 	test_da_attributes({
-		att => 'scriptfile',
+		att => 'script_file',
 		value => 'Lnation'
 	});
 	test_da_attributes({

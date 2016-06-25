@@ -6,7 +6,7 @@ use Moo;
 
 my %fields = (
     name => 'Eliza',
-    scriptfile => '',
+    script_file => '',
     debug => 0,
     debug_text => '',
     transform_text => '',

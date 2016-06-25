@@ -7,7 +7,7 @@ use Test::More;
 plan tests => 1;
 
 BEGIN {
-    use_ok( 'Chatbot::Eliza2' ) || print "Bail out!\n";
+    use_ok( 'Chatbot::Eliza' ) || print "Bail out!\n";
 }
 
-diag( "Testing Chatbot::Eliza2 $Chatbot::Eliza2::VERSION, Perl $], $^X" );
+diag( "Testing Chatbot::Eliza $Chatbot::Eliza::VERSION, Perl $], $^X" );
