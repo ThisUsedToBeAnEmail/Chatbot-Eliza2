@@ -8,8 +8,6 @@ use experimental qw[
     signatures
 ];
 
-use String::Trigram;
-
 has 'options' => (
 	is => 'rw',
 	lazy => 1,
@@ -61,11 +59,11 @@ sub postprocess ($self, $string) {
     return join ' ', @orig_words;   
 }
 
-=head2 _testquit()
+=head2 _test_quit
     
-    if ( $self->_testquit($user_input) ) { } 
+     $self->_test_quit($user_input) ) { } 
 
-_testquit() detects words like "bye" and "quit" and returns true if it 
+_test_quit detects words like "bye" and "quit" and returns true if it 
 finds one of them as the first word in the sentence.
 
 Thes words are listed in the script, under the keyword "quit".
@@ -80,11 +78,19 @@ sub _test_quit ($self, $string) {
 
 =head2 _debug_memory
 
+    $self->_debug_memory
+
+_debug_memory is a special function hwihc returns the contents of Eliza's memory stack.
 
 =cut
 
-sub _debug_memory {
-
+sub _debug_memory ($self) {
+    my @memory = $self->options->memory->@*;
+    my $string = sprintf("%s item(s) in memory stack:\n", scalar @memory);
+    foreach my $msg (@memory) {
+        $string .= sprintf("\t\t->%s\n", $msg);
+    }
+    return $string;
 }
 
 sub transform {

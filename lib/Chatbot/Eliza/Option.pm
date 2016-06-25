@@ -22,7 +22,7 @@ my %fields = (
     myrand => sub { my $N = defined $_[0] ? $_[0] : 1; rand($N); },
     max_memory_size => 5,
     likelihood_of_using_memory => 1,
-    memory => undef,
+    memory => sub { [ ] },
 );
 
 while ( my( $key, $value ) = each %fields ) {
