@@ -12,28 +12,28 @@ BEGIN {
 }
 # doesn't store memory so it's actually pretty useless
 
-subtest 'say goodbye in multiple ways' => sub {
-	test_preprocess({
+subtest 'test_postprocess' => sub {
+	test_postprocess({
 		text => 'hello world',			
 	    expected => 'hello world',			
     });
-	test_preprocess({
+	test_postprocess({
 		text => 'hello recolect',			
 	    expected => 'hello recollect',			
     });
-	test_preprocess({
+	test_postprocess({
 		text => 'eliza goodbye',			
 	    expected => 'eliza goodbye',			
     });
-	test_preprocess({
+	test_postprocess({
 		text => 'done certainle',			
 	    expected => 'done certainly',			
     });
-	test_preprocess({
+	test_postprocess({
 		text => 'maybr',			
 	    expected => 'maybe',			
     });
-	test_preprocess({
+	test_postprocess({
 		text => 'machynes',
         expected => 'machines',			
 	});
@@ -41,14 +41,13 @@ subtest 'say goodbye in multiple ways' => sub {
 
 done_testing();
 
-sub test_preprocess {
+sub test_postprocess {
 	my $args = shift;
 
     my $options = Chatbot::Eliza::Option->new();
     my $eliza = Chatbot::Eliza::Brain->new(options => $options);
-	my $reply = $eliza->preprocess($args->{text});
+	ok(my $reply = $eliza->postprocess($args->{text}));
 	# reply will always have a value
-	ok($reply);
 	is($reply, $args->{expected}, "we went through preprocess - $reply");
 };
 

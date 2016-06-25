@@ -55,43 +55,53 @@ subtest 'attributes exist' => sub {
 		value => '0.1'
 	});
 	test_da_attributes({
-		att => 'keyranks',
+		att => 'key',
+		data => 1,
+        value => 'Lnation'
+	});
+	test_da_attributes({
+		att => 'decomp',
+        data => 1,
 		value => 'Lnation'
 	});
 	test_da_attributes({
-		att => 'decomplist',
+		att => 'reasmb',
+        data => 1,
 		value => 'Lnation'
 	});
 	test_da_attributes({
-		att => 'reasmblist',
-		value => 'Lnation'
-	});
-	test_da_attributes({
-		att => 'reasmblist_for_memory',
+		att => 'reasmb_for_memory',
+        data => 1,
 		value => 'Lnation'
 	});
 	test_da_attributes({
 		att => 'pre',
+        data => 1,
 		value => 'Lnation'
 	});
 	test_da_attributes({
 		att => 'post',
+        data => 1,
 		value => 'Lnation'
 	});
 	test_da_attributes({
 		att => 'synon',
+        data => 1,
 		value => 'Lnation'
 	});
 	test_da_attributes({
 		att => 'initial',
+        data => 1,
 		value => 'Lnation'
 	});
 	test_da_attributes({
 		att => 'final',
+        data => 1,
 		value => 'Lnation'
 	});
 	test_da_attributes({
 		att => 'quit',
+        data => 1,
 		value => 'Lnation'
 	});
 	test_da_attributes({
@@ -115,7 +125,13 @@ sub test_da_attributes($args) {
 	my $att = $args->{att};
 	
 	# set the attribute
-	ok($fields->$att($args->{value}));
 	# check its value
-	is($fields->$att, $args->{value}, "$att set with correct value");
+    if ($args->{data}){
+        ok($fields->data->$att($args->{value}));
+        is($fields->data->$att, $args->{value}, "$att set with correct value ");
+    }
+	else { 
+        ok($fields->$att($args->{value}));
+        is($fields->$att, $args->{value}, "$att set with correct value");
+    }
 }

@@ -83,7 +83,7 @@ sub parse_script_data ($self) {
     }
 }
 
-sub _unique_words($self, $line) {
+sub _unique_words ($self, $line) {
     $line =~ s/[^a-zA-Z\'\s+]//g;
     my @words = split(' ', $line); 
     foreach my $word ( @words ) {
