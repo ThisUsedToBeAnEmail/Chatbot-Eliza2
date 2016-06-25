@@ -6,108 +6,108 @@ use Moo;
 use Syntax::Keyword::Junction qw(any);
 use feature 'say';
 use experimental qw[
-	signatures
+    signatures
 ];
 
 has 'script_file' => (
-	is => 'rw',
-	default => q{},
+    is => 'rw',
+    default => q{},
 );
 
 has 'data' => (
-	is => 'rw',
-	lazy => 1,
-	default => sub {
-		return {
-			quit => [ ],
-			initial => [ ],
-			final => [ ],
-			decomp => { },
-			reasmb => { },
-			reasmb_for_memory => { },
-			pre => { },
-			post => { },
-			synon => { },
-			key => { },
-		};
-	},
+    is => 'rw',
+    lazy => 1,
+    default => sub {
+        return {
+            quit => [ ],
+            initial => [ ],
+            final => [ ],
+            decomp => { },
+            reasmb => { },
+            reasmb_for_memory => { },
+            pre => { },
+            post => { },
+            synon => { },
+            key => { },
+        };
+    },
 );
 
 sub parse_script_data ($self) {
-	my @script_lines = $self->_open_script_file($self->script_file);
-	my $data = $self->data;
-	my ($thiskey, $decomp);
-	# Examine each line of the script data
-	for my $line (@script_lines) {
-			
-		# Skip comments and lines with only whitespace
-		next if $line =~ /^[\s*#|\s*]$/;
-		
-		# Split entrytype and entry, using a colon as the delimiter
-		my ($entry_type, $entry) = split /:/, $line;
-		# remove the whitespace
-		$entry_type = _trim_string($entry_type);
-		$entry = _trim_string($entry);
-	
-		for ($entry_type) {
-			/quit|initial|final/ and do { push $data->{$_}->@*, $entry; last; };
-			/decomp/ and do {
-				die "$0: error parsing script: decomp rule with no keyword. \n"
-					unless $thiskey;
-				$decomp = join($;, $thiskey, $entry);
-				push $data->{$_}->{$thiskey}->@*, $entry;
-				last;
-			};
-			/reasmb|reasmb_for_mempory/ and do {
-				die "$0: error parsing scrip reassembly rule with no decomposition rule" 
-					unless $decomp;
-				push $data->{$_}->{$decomp}->@*, $entry;
-				last;
-			};
-			# everything else we have a key - split on first space
-			my ($key, $value) = split(/\s/, $entry);
-			/pre|post/ and do { $data->{$_}->{$key} = $value; last; };
-			/synon/ and do { $data->{$_}->{$key} = [ split /\ /, $value ]; last; };
-			/key/ and do { 
-				$thiskey = $key;
-				$decomp = "";
-				$data->{$_}->{$key} = $value; 
-				last; 
-			};
-		}
-	}
-	$self->data($data);
-	return $data;
+    my @script_lines = $self->_open_script_file($self->script_file);
+    my $data = $self->data;
+    my ($thiskey, $decomp);
+    # Examine each line of the script data
+    for my $line (@script_lines) {
+            
+        # Skip comments and lines with only whitespace
+        next if $line =~ /^[\s*#|\s*]$/;
+        
+        # Split entrytype and entry, using a colon as the delimiter
+        my ($entry_type, $entry) = split /:/, $line;
+        # remove the whitespace
+        $entry_type = _trim_string($entry_type);
+        $entry = _trim_string($entry);
+    
+        for ($entry_type) {
+            /quit|initial|final/ and do { push $data->{$_}->@*, $entry; last; };
+            /decomp/ and do {
+                die "$0: error parsing script: decomp rule with no keyword. \n"
+                    unless $thiskey;
+                $decomp = join($;, $thiskey, $entry);
+                push $data->{$_}->{$thiskey}->@*, $entry;
+                last;
+            };
+            /reasmb|reasmb_for_mempory/ and do {
+                die "$0: error parsing scrip reassembly rule with no decomposition rule" 
+                    unless $decomp;
+                push $data->{$_}->{$decomp}->@*, $entry;
+                last;
+            };
+            # everything else we have a key - split on first space
+            my ($key, $value) = split(/\s/, $entry);
+            /pre|post/ and do { $data->{$_}->{$key} = $value; last; };
+            /synon/ and do { $data->{$_}->{$key} = [ split /\ /, $value ]; last; };
+            /key/ and do { 
+                $thiskey = $key;
+                $decomp = "";
+                $data->{$_}->{$key} = $value; 
+                last; 
+            };
+        }
+    }
+    $self->data($data);
+    return $data;
 }
 
 sub _trim_string ($string) {
-	$string =~ s/^\s+|\s+$//g;
-	return $string;
+    $string =~ s/^\s+|\s+$//g;
+    return $string;
 }
 
-sub _open_script_file ($self, $script_file) {	
-	my @script_lines;
-	if ($script_file) {
-		# If we have an external script file, open it
-		open (my $fh, "<", $script_file)
-			or die "Could not read from file $script_file : $!\n";
-		
-		@script_lines = <$fh>;
-		close ($fh);
+sub _open_script_file ($self, $script_file) {    
+    my @script_lines;
+    if ($script_file) {
+        # If we have an external script file, open it
+        open (my $fh, "<", $script_file)
+            or die "Could not read from file $script_file : $!\n";
+        
+        @script_lines = <$fh>;
+        close ($fh);
 
-		$self->script_file($script_file);
-	}
-	else {
-		# Otherwise, read in the data from the bottom of this file.
-		# This data might be read several times, so we save the offset pointer
-		my $where = tell(DATA);
-		@script_lines = <DATA>;
-		
-		# and reset it when we're done.
-		seek(DATA, $where, 0);
-		$self->script_file('none');
-	}
-	return @script_lines;
+        $self->script_file($script_file);
+    }
+    else {
+        # Otherwise, read in the data from the bottom of this file.
+        # This data might be read several times, so we save the offset pointer
+        my $where = tell(DATA);
+        @script_lines = <DATA>;
+        
+        # and reset it when we're done.
+        seek(DATA, $where, 0);
+        $self->script_file('none');
+    }
+    return @script_lines;
 }
 
 1; # End of Chatbot::Eliza2
@@ -242,7 +242,7 @@ key: perhaps 0
     reasmb: Can't you be more positive ?
     reasmb: You aren't sure ?
     reasmb: Don't you know ?
-	reasmb: How likely, would you estimate ?
+    reasmb: How likely, would you estimate ?
 key: name 15
   decomp: *
     reasmb: I am not interested in names.
