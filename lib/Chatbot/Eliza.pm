@@ -4,6 +4,9 @@ use v5.24;
 use strict;
 use warnings;
 
+use Chatbot::Eliza::Option;
+use Chatbot::Eliza::Brain;
+
 use Moo;
 
 use experimental qw[
@@ -38,7 +41,7 @@ sub command_interface ($self) {
     my ($reply, $previous_user_input, $user_input) = "";
     
     my $options = $self->brain->options;
-    $options->botprompt($self->name . ":\t");
+    $options->botprompt($options->name . ":\t");
     $options->userprompt("you:\t");
 
     # Seed the rand number generator.
@@ -48,7 +51,8 @@ sub command_interface ($self) {
     print $options->botprompt if $options->prompts_on;
 
     # print an initial greeting
-    print "$self->{initial}->[ $options->myrand( scalar $options->initial ) ]\n";
+    print $options->data->initial->[ $options->myrand( scalar $options->data->initial->@* ) ] . "\n";
+
 
     while (1) {
 
@@ -58,7 +62,7 @@ sub command_interface ($self) {
         chomp( $user_input = <STDIN> );
 
         # If the user wants to quit,
-        if ($self->brain->_testquit($user_input) ) {
+        if ($self->brain->_test_quit($user_input)) {
             $reply = $options->data->final->[ $options->myrand(scalar $options->data->final->@*)];
             print $self->botprompt if $self->prompts_on;
             print "$reply\n";
@@ -89,7 +93,7 @@ sub command_interface ($self) {
         }
 
         # Invoke the transform method to generate a reply
-        $reply = $self->transform($user_input, '');
+        $reply = $self->brain->transform($user_input, '');
 
         # Print out the debugging text if debugging is set to on.
         # This variable should have been set by the transform method
