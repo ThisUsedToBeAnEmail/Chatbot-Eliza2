@@ -49,4 +49,9 @@ sub myrand ($self, $max) {
     return rand($n);
 }
 
+sub welcome_message ($self) {
+    my $initial = $self->data->initial;
+    return $initial->[ $self->myrand( scalar $initial->@* ) ];
+}
+
 1; # End of Chatbot::Eliza2

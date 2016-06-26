@@ -3,7 +3,7 @@ package Chatbot::Eliza::Brain;
 use v5.24;
 
 use Moo;
-
+use Data::Dumper;
 use experimental qw[
     signatures
 ];
@@ -133,8 +133,9 @@ for setting this parameter is embedded in he transform method itself. If the fla
 
 sub transform ($self, $string, $use_memory ) {
     my ($this_decomp, $reasmbkey);
-    
-    $self->options->debug_text(sprintf "\t[Pulling string \"$string\" from memory.]\n")
+
+    my $options = $self->options;
+    $options->debug_text(sprintf "\t[Pulling string \"$string\" from memory.]\n")
         if $use_memory;
 
     # Default to a really low rank. 
@@ -152,42 +153,45 @@ sub transform ($self, $string, $use_memory ) {
     foreach my $string_part (@string_parts) {
 
         # Run through the whole list of keywords.  
-        KEYWORD: foreach my $keyword (keys $self->options->data->decomp->%*) {
+        KEYWORD: foreach my $keyword (keys $options->data->decomp->%*) {
 
             # Check to see if the input string contains a keyword
             # which outranks any we have found previously
             # (On first loop, rank is set to -2.)
             if ( ($string_part =~ /\b$keyword\b/i or $keyword eq $goto) 
                  and 
-                 $rank < $self->options->data->key->{$keyword}  
+                 $rank < $options->data->key->{$keyword}  
                ) 
             {
                 # If we find one, then set $rank to equal 
                 # the rank of that keyword. 
-                $rank = $self->options->data->key->{$keyword};
-
-                $self->options->debug_text($self->options->debug_text . sprintf "\t$rank> $keyword");
+                $rank = $options->data->key->{$keyword};
+                $options->debug_text(
+                    sprintf("%s \trank:%d keyword:%s",
+                        $options->debug_text, $rank, $keyword)
+                );
 
                 # Now let's check all the decomposition rules for that keyword. 
-                foreach my $decomp ($self->options->data->decomp->{$keyword}->@*) {
+                foreach my $decomp ($options->data->decomp->{$keyword}->@*) {
 
                     # Change '*' to '\b(.*)\b' in this decomposition rule,
                     # so we can use it for regular expressions.  Later, 
                     # we will want to isolate individual matches to each wildcard. 
                     ($this_decomp = $decomp) =~ s/\s*\*\s*/\\b\(\.\*\)\\b/g;
-
                     # If this docomposition rule contains a word which begins with '@', 
                     # then the script also contained some synonyms for that word.  
                     # Find them all using %synon and generate a regular expression 
                     # containing all of them. 
                     if ($this_decomp =~ /\@/ ) {
                         my $index = $this_decomp =~ s/.*\@(\w*).*/$1/i ;
-                        my $synonyms = join ('|', $self->options->data->synon->{$index}->@* );
+                        my $synonyms = join ('|', $options->data->synon->{$index}->@* );
                         $this_decomp =~ s/(.*)\@$index(.*)/$1($index\|$synonyms)$2/g;
                     }
 
-                    $self->options->debug_text($self->options->debug_text .  sprintf "\n\t\t: $decomp");
-
+                    $options->debug_text(
+                        sprintf("%s \n\t\t: %s", $options->debug_text, $decomp)
+                    );
+                    
                     # Using the regular expression we just generated, 
                     # match against the input string.  Use empty "()"'s to 
                     # eliminate warnings about uninitialized variables. 
@@ -198,26 +202,26 @@ sub transform ($self, $string, $use_memory ) {
                         # to individual wildcards.  Use '0' as a placeholder
                         # (we don't want to refer to any "zeroth" wildcard).
                         my @decomp_matches = ("0", $1, $2, $3, $4, $5, $6, $7, $8, $9); 
-                        $self->options->debug_text(sprintf( "%s : %s \n",
-                            $self->options->debug_text,  \@decomp_matches ));
+                        $options->debug_text(sprintf( "%s : %s \n",
+                            $options->debug_text,  join( ' ', @decomp_matches)));
 
                         # Using the keyword and the decomposition rule,
                         # reconstruct a key for the list of reassamble rules.
-                        $reasmbkey = join ($;,$keyword,$decomp);
+                        $reasmbkey = join $;, $keyword, $decomp;
                         # Get the list of possible reassembly rules for this key. 
-                        my @these_reasmbs  = $self->options->data->reasmb->{$reasmbkey}->@*;
+                        my @these_reasmbs = $options->data->reasmb->{$reasmbkey}->@*;
 
                         # Pick out a reassembly rule at random :). 
-                        $reasmb = $these_reasmbs[ $self->options->myrand( scalar @these_reasmbs ) ];
-                        $self->options->debug_text(sprintf( "%s \t\t--> %s\n", 
-                            $self->options->debug_text, $reasmb ));
+                        $reasmb = $these_reasmbs[ $options->myrand( scalar @these_reasmbs ) ];
+                        $options->debug_text(sprintf( "%s \t\t--> %s\n", 
+                            $options->debug_text, $reasmb ));
 
                         # If the reassembly rule we picked contains the word "goto",
                         # then we start over with a new keyword.  Set $keyword to equal
                         # that word, and start the whole loop over. 
                         if ($reasmb =~ m/^goto\s(\w*).*/i) {
-                            $self->options->debug_text(sprintf("%s \$1 = $1\n",
-                                $self->options->debug_text));
+                            $options->debug_text(sprintf("%s \$1 = $1\n",
+                                $options->debug_text));
                             $goto = $keyword = $1;
                             $rank = -2;
                             redo KEYWORD;
@@ -239,7 +243,7 @@ sub transform ($self, $string, $use_memory ) {
 
                     }  # End if ($string_part =~ /$this_decomp/i) 
 
-                    $self->options->debug_text($self->options->debug_text . sprintf "\n");
+                    $options->debug_text($options->debug_text . sprintf "\n");
 
                 } # End DECOMP: foreach $decomp (@{ $self->{decomplist}->{$keyword} }) 
 
@@ -252,18 +256,18 @@ sub transform ($self, $string, $use_memory ) {
     if ($reasmb eq "") {
 
         # THINK ABOUT A LITTLE MORE
-        my @memory = $self->options->memory->@*;
+        my @memory = $options->memory->@*;
         if (
             scalar @memory >= 1 
             and 
-            $self->options->myrand(1) >= 1 - $self->options->likelihood_of_using_memory
+            $options->myrand(1) >= 1 - $options->likelihood_of_using_memory
         ) {
             $reasmb =  $self->transform( shift @memory, "use memory" );
         } else {
             $reasmb =  $self->transform("xnone", "");
         }
 
-    } elsif ($self->options->memory_on) {   
+    } elsif ($options->memory_on) {   
 
         # If memory is switched on, then we handle memory. 
 
@@ -272,20 +276,20 @@ sub transform ($self, $string, $use_memory ) {
         # that's where we got it from in the first place, or if the rank
         # is not the kind we remember.
         if (
-                $#{ $self->options->data->reasmb_for_memory->{$reasmbkey} } >= 0
+                $#{ $options->data->reasmb_for_memory->{$reasmbkey} } >= 0
                 and
                 not defined $use_memory
         ) {
-            push  $self->options->memory->@*, $string;
+            push  $options->memory->@*, $string;
         }
 
         # Shift out the least-recent item from the bottom 
         # of the memory stack if the stack exceeds the max size. 
-        my @memory = $self->options->memory->@*;
-        shift @memory if scalar @memory >= $self->options->max_memory_size;
+        my @memory = $options->memory->@*;
+        shift @memory if scalar @memory >= $options->max_memory_size;
 
-        $self->options->debug_text(sprintf("%s \t%d item(s) in memory.\n", 
-                $self->options->debug_text, scalar @memory + 1 ) );
+        $options->debug_text(sprintf("%s \t%d item(s) in memory.\n", 
+                $options->debug_text, scalar @memory + 1 ) );
     } # End if ($reasmb eq "")
 
     $reasmb =~ tr/ / /s;       # Eliminate any duplicate space characters. 
@@ -293,8 +297,7 @@ sub transform ($self, $string, $use_memory ) {
 
     # Save the return string so that forgetful calling programs
     # can ask the bot what the last reply was. 
-    $self->options->transform_text($reasmb);
-
+    $options->transform_text($reasmb);
     return $reasmb;
 }
 

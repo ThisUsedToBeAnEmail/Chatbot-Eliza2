@@ -51,8 +51,7 @@ sub command_interface ($self) {
     print $options->botprompt if $options->prompts_on;
 
     # print an initial greeting
-    print $options->data->initial->[ $options->myrand( scalar $options->data->initial->@* ) ] . "\n";
-
+    print $options->welcome_message . "\n";
 
     while (1) {
 
