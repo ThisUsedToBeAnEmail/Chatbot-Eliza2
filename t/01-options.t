@@ -51,10 +51,6 @@ subtest 'attributes exist' => sub {
 		value => 'Lnation'
 	});
 	test_da_attributes({
-		att => 'myrand',
-		value => '0.1'
-	});
-	test_da_attributes({
 		att => 'key',
 		data => 1,
         value => 'Lnation'
