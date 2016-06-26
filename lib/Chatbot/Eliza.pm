@@ -34,16 +34,6 @@ sub _build_brain ($self) {
     return Chatbot::Eliza::Brain->new(options => $options);
 }
 
-has 'eliza' => (
-    is     => 'rw',
-    lazy => 1,
-    builder => '_build_eliza'
-);
-
-sub _build_eliza ($self) {
-    return Chatbot::Eliza::Brain->new(options => $self->options);
-}
-
 sub command_interface ($self) {
     my ($reply, $previous_user_input, $user_input) = "";
     

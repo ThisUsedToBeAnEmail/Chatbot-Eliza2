@@ -23,10 +23,10 @@ subtest 'attributes exist' => sub {
 	});
 	update_options({
 		options => {
-			scriptfile => 'somefile'
+			script_file => 'somefile.txt'
 		},
-		att => 'scriptfile',
-		value => 'somefile'
+		att => 'script_file',
+		value => 'somefile.txt'
 	});
 	update_options({
 		options => {
