@@ -19,7 +19,6 @@ my %fields = (
     memory_on => 1,
     botprompt => '',
     userprompt => '',
-    myrand => sub { my $N = defined $_[0] ? $_[0] : 1; rand($N); },
     max_memory_size => 5,
     likelihood_of_using_memory => 1,
     memory => sub { [ ] },
@@ -43,6 +42,11 @@ sub build_data ($self) {
     my $parser = Chatbot::Eliza::ScriptParser->new(script_file => $self->script_file);
     $parser->parse_script_data;
     return $parser;
+}
+
+sub myrand ($self, $max) {
+    my $n = defined $max ? $max : 1;
+    return rand($n);
 }
 
 1; # End of Chatbot::Eliza2
