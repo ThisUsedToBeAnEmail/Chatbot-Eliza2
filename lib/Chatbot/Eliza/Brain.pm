@@ -13,6 +13,12 @@ has 'options' => (
     lazy => 1,
 );
 
+has 'last' => (
+    is => 'rw',
+    lazy => 1,
+    default => undef
+);
+
 =head2 preprocess
 
     $string = preprocess($string);
@@ -32,15 +38,16 @@ It uses the array C<%pre>, which is created during the parse of the script.
 sub preprocess ($self, $string) {
     my @orig_words = split / /, $string;
    
-    # lets use CPAN this may b slow
-    # Decides String::Trigram is wank
-    # tbc - compare the tests 
     my @converted_words;
+
+    my @string_parts = split /\./, $string ;
     foreach my $word ( @orig_words ) {
+        #TODO: add some kind of spell check against unique words
+
         push @converted_words, $word =~ s{[?!,]|but}{.}g;
     }
-
-    return join ' ', @orig_words;
+    my $formated = join ' ', @orig_words;
+    return split /\./, $string ;
 }
 
 =head2 postprocess
@@ -135,8 +142,13 @@ sub transform ($self, $string, $use_memory ) {
     my ($this_decomp, $reasmbkey);
 
     my $options = $self->options;
-    $options->debug_text(sprintf "\t[Pulling string \"$string\" from memory.]\n")
+    $options->debug_text(sprintf("\t[Pulling string \"%s\" from memory.]\n", $string))
         if $use_memory;
+
+    if ($self->_test_quit($string)){
+        $self->last(1);
+        return $options->data->final->[ $options->myrand(scalar $options->data->final->@*) ];
+    }
 
     # Default to a really low rank. 
     my $rank   = -2;
@@ -144,10 +156,7 @@ sub transform ($self, $string, $use_memory ) {
     my $goto   = "";
 
     # First run the string through preprocess.  
-    $string = $self->preprocess( $string );
-
-    # Split the string by periods into an array
-    my @string_parts = split /\./, $string ;
+    my @string_parts = $self->preprocess( $string );
 
     # Examine each part of the input string in turn.
     foreach my $string_part (@string_parts) {
@@ -183,13 +192,13 @@ sub transform ($self, $string, $use_memory ) {
                     # Find them all using %synon and generate a regular expression 
                     # containing all of them. 
                     if ($this_decomp =~ /\@/ ) {
-                        my $index = $this_decomp =~ s/.*\@(\w*).*/$1/i ;
-                        my $synonyms = join ('|', $options->data->synon->{$index}->@* );
-                        $this_decomp =~ s/(.*)\@$index(.*)/$1($index\|$synonyms)$2/g;
+                        $this_decomp =~ s/.*\@(\w*).*/$1/i;
+                        my $synonyms = join ('|', $options->data->synon->{$this_decomp}->@* );
+                        $this_decomp =~ s/(.*)\@$this_decomp(.*)/$1($this_decomp\|$synonyms)$2/g;
                     }
 
                     $options->debug_text(
-                        sprintf("%s \n\t\t: %s", $options->debug_text, $decomp)
+                        sprintf("%s\n\t\t: %s", $options->debug_text, $decomp)
                     );
                     
                     # Using the regular expression we just generated, 
@@ -213,7 +222,7 @@ sub transform ($self, $string, $use_memory ) {
 
                         # Pick out a reassembly rule at random :). 
                         $reasmb = $these_reasmbs[ $options->myrand( scalar @these_reasmbs ) ];
-                        $options->debug_text(sprintf( "%s \t\t--> %s\n", 
+                        $options->debug_text(sprintf("%s \t\t--> %s\n", 
                             $options->debug_text, $reasmb ));
 
                         # If the reassembly rule we picked contains the word "goto",

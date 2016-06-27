@@ -60,14 +60,6 @@ sub command_interface ($self) {
         $previous_user_input = $user_input;
         chomp( $user_input = <STDIN> );
 
-        # If the user wants to quit,
-        if ($self->brain->_test_quit($user_input)) {
-            $reply = $options->data->final->[ $options->myrand(scalar $options->data->final->@*)];
-            print $self->botprompt if $self->prompts_on;
-            print "$reply\n";
-            last;
-        }
-
         # If the user enters the work "debug",
         # the toggle on/off Eliza's debug output.
         if ($user_input eq "debug") {
@@ -100,21 +92,14 @@ sub command_interface ($self) {
 
         # print the actual reply
         print $options->botprompt if $options->prompts_on;
-        print "$reply\n";
+        print sprintf("%s\n", $reply);
+
+        last if $self->brain->last;
    }
 }
 
 sub instance ($self, $user_input) {
-    my $reply;
-    my $brain = $self->brain;
-    if ($brain->_test_quit($user_input)) {
-        my @final = $brain->options->data->final->@*;
-        $reply = $final[ $brain->options->myrand( scalar @final ) ]; 
-    }
-    else {
-        $reply = $brain->transform($user_input, '');
-    }
-    return $reply;
+    return $self->brain->transform($user_input, '');
 }
 
 1; # End of Chatbot::Eliza2
