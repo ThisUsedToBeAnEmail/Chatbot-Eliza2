@@ -19,6 +19,12 @@ has 'last' => (
     default => undef
 );
 
+has 'decomp_matches' => (
+    is => 'rw',
+    lazy => 1,
+    default => sub { [ ] },
+);
+
 =head2 preprocess
 
     $string = preprocess($string);
@@ -62,12 +68,11 @@ It uses the attribute C<%post>, created during the parse of the script.
 
 =cut
 
-sub postprocess ($self, $string) {
-    my @orig_words = split / /, $string;
-   
-    # wonders what he was trying to do - perhaps I'm not passing the correct data -_-
-
-    return join ' ', @orig_words;   
+sub postprocess ($self, @decomp) {
+   for (my $i = 1; $i < scalar @decomp; $i++){
+       @decomp[$i] =~ s/([,;?!]|\.*)$//;
+   } 
+   return \@decomp;
 }
 
 =head2 _test_quit
@@ -211,9 +216,12 @@ sub transform ($self, $string, $use_memory ) {
                         # to individual wildcards.  Use '0' as a placeholder
                         # (we don't want to refer to any "zeroth" wildcard).
                         my @decomp_matches = ("0", $1, $2, $3, $4, $5, $6, $7, $8, $9); 
-                        $options->debug_text(sprintf( "%s : %s \n",
-                            $options->debug_text,  join( ' ', @decomp_matches)));
-
+                        push $self->decomp_matches->@*, { matches => \@decomp_matches };
+                        $options->debug_text(
+                            sprintf( "%s : %s \n", 
+                                $options->debug_text,  join( ' ', @decomp_matches))
+                        );
+                        
                         # Using the keyword and the decomposition rule,
                         # reconstruct a key for the list of reassamble rules.
                         $reasmbkey = join $;, $keyword, $decomp;
@@ -222,8 +230,10 @@ sub transform ($self, $string, $use_memory ) {
 
                         # Pick out a reassembly rule at random :). 
                         $reasmb = $these_reasmbs[ $options->myrand( scalar @these_reasmbs ) ];
-                        $options->debug_text(sprintf("%s \t\t--> %s\n", 
-                            $options->debug_text, $reasmb ));
+                        $options->debug_text(
+                            sprintf("%s \t\t--> %s\n", 
+                                $options->debug_text, $reasmb )
+                        );
 
                         # If the reassembly rule we picked contains the word "goto",
                         # then we start over with a new keyword.  Set $keyword to equal
@@ -239,21 +249,22 @@ sub transform ($self, $string, $use_memory ) {
                         # Otherwise, using the matches to wildcards which we stored above,
                         # insert words from the input string back into the reassembly rule. 
                         # [THANKS to Gidon Wise for submitting a bugfix here]
-                        for (my $i = 1; $i <= $#decomp_matches; $i++) {
-                            $decomp_matches[$i] = $self->postprocess( $decomp_matches[$i] );
-                            $decomp_matches[$i] =~ s/([,;?!]|\.*)$//;
-                            $reasmb =~ s/\($i\)/$decomp_matches[$i]/g;
+                        my $decomp_matches = $self->decomp_matches;
+                        foreach my $match ($decomp_matches->@*) {
+                            $match->{matches} = $self->postprocess( $match->{matches}->@* );
+                            for (my $i = 1; $i < 10; $i++) {
+                                $reasmb =~ s/\($i\)/$match->{matches}->[$i]/g;
+                            }
                         }
 
                         # Move on to the next keyword.  If no other keywords match,
                         # then we'll end up actually using the $reasmb string 
                         # we just generated above.
-                        next KEYWORD ;
+                        next KEYWORD;
 
                     }  # End if ($string_part =~ /$this_decomp/i) 
 
                     $options->debug_text($options->debug_text . sprintf "\n");
-
                 } # End DECOMP: foreach $decomp (@{ $self->{decomplist}->{$keyword} }) 
 
             } # End if ( ($string_part =~ /\b$keyword\b/i or $keyword eq $goto) 
