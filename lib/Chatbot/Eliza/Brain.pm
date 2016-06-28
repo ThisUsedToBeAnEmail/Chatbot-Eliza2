@@ -3,7 +3,7 @@ package Chatbot::Eliza::Brain;
 use v5.24;
 
 use Moo;
-use Data::Dumper;
+use Ref::Util qw(is_scalarref is_blessed_arrayref);
 use experimental qw[
     signatures
 ];
@@ -45,14 +45,12 @@ sub preprocess ($self, $string) {
     my @orig_words = split / /, $string;
    
     my @converted_words;
-
-    my @string_parts = split /\./, $string ;
     foreach my $word ( @orig_words ) {
         #TODO: add some kind of spell check against unique words
 
         push @converted_words, $word =~ s{[?!,]|but}{.}g;
     }
-    my $formated = join ' ', @orig_words;
+    my $formated = join ' ', @converted_words;
     return split /\./, $string ;
 }
 
@@ -68,11 +66,16 @@ It uses the attribute C<%post>, created during the parse of the script.
 
 =cut
 
-sub postprocess ($self, @decomp) {
-   for (my $i = 1; $i < scalar @decomp; $i++){
-       @decomp[$i] =~ s/([,;?!]|\.*)$//;
-   } 
-   return \@decomp;
+sub postprocess ($self, $string) {
+   if ( is_blessed_arrayref($string) ) {
+       for (my $i = 1; $i < scalar $string->@*; $i++){
+            $string->[$i] =~ s/([,;?!]|\.*)$//;
+        }
+   } elsif ( is_scalarref(\$string) ) {
+        $string =~ tr/ / /s;       # Eliminate any duplicate space characters. 
+        $string =~ s/[ ][?]$/?/;   # Eliminate any spaces before the question mark. 
+   }
+   return $string;
 }
 
 =head2 _test_quit
@@ -209,13 +212,13 @@ sub transform ($self, $string, $use_memory ) {
                     # Using the regular expression we just generated, 
                     # match against the input string.  Use empty "()"'s to 
                     # eliminate warnings about uninitialized variables. 
-                    if ($string_part =~ /$this_decomp()()()()()()()()()()/i) {
+                    if ($string_part =~ /$this_decomp()()()()()()()()()()()/i) {
 
                         # If this decomp rule matched the string, 
                         # then create an array, so that we can refer to matches
                         # to individual wildcards.  Use '0' as a placeholder
                         # (we don't want to refer to any "zeroth" wildcard).
-                        my @decomp_matches = ("0", $1, $2, $3, $4, $5, $6, $7, $8, $9); 
+                        my @decomp_matches = ("0", $1, $2, $3, $4, $5, $6, $7, $8, $9, $10); 
                         push $self->decomp_matches->@*, { matches => \@decomp_matches };
                         $options->debug_text(
                             sprintf( "%s : %s \n", 
@@ -251,7 +254,7 @@ sub transform ($self, $string, $use_memory ) {
                         # [THANKS to Gidon Wise for submitting a bugfix here]
                         my $decomp_matches = $self->decomp_matches;
                         foreach my $match ($decomp_matches->@*) {
-                            $match->{matches} = $self->postprocess( $match->{matches}->@* );
+                            $match->{matches} = $self->postprocess( $match->{matches} );
                             for (my $i = 1; $i < 10; $i++) {
                                 $reasmb =~ s/\($i\)/$match->{matches}->[$i]/g;
                             }
@@ -264,7 +267,7 @@ sub transform ($self, $string, $use_memory ) {
 
                     }  # End if ($string_part =~ /$this_decomp/i) 
 
-                    $options->debug_text($options->debug_text . sprintf "\n");
+                    $options->debug_text($options->debug_text . "\n");
                 } # End DECOMP: foreach $decomp (@{ $self->{decomplist}->{$keyword} }) 
 
             } # End if ( ($string_part =~ /\b$keyword\b/i or $keyword eq $goto) 
@@ -273,47 +276,20 @@ sub transform ($self, $string, $use_memory ) {
     
     } # End STRING_PARTS: foreach $string_part (@string_parts) {
 
-    if ($reasmb eq "") {
-
-        # THINK ABOUT A LITTLE MORE
-        my @memory = $options->memory->@*;
-        if (
-            scalar @memory >= 1 
-            and 
-            $options->myrand(1) >= 1 - $options->likelihood_of_using_memory
-        ) {
-            $reasmb =  $self->transform( shift @memory, "use memory" );
-        } else {
-            $reasmb =  $self->transform("xnone", "");
-        }
-
-    } elsif ($options->memory_on) {   
-
-        # If memory is switched on, then we handle memory. 
-
-        # Now that we have successfully transformed this string, 
-        # push it onto the end of the memory stack... unless, of course,
-        # that's where we got it from in the first place, or if the rank
-        # is not the kind we remember.
-        if (
-                $#{ $options->data->reasmb_for_memory->{$reasmbkey} } >= 0
-                and
-                not defined $use_memory
-        ) {
-            push  $options->memory->@*, $string;
-        }
-
+    $reasmb = $self->transform("xnone", "") if $reasmb eq "";
+    
+    $reasmb = $self->postprocess($reasmb);
+    
+    if ($options->memory_on) {   
         # Shift out the least-recent item from the bottom 
         # of the memory stack if the stack exceeds the max size. 
-        my @memory = $options->memory->@*;
-        shift @memory if scalar @memory >= $options->max_memory_size;
+        shift $options->memory->@* if scalar $options->memory->@* >= $options->max_memory_size;
+        # push in the current reasem string
+        push $options->memory->@*, $reasmb;
 
         $options->debug_text(sprintf("%s \t%d item(s) in memory.\n", 
-                $options->debug_text, scalar @memory + 1 ) );
-    } # End if ($reasmb eq "")
-
-    $reasmb =~ tr/ / /s;       # Eliminate any duplicate space characters. 
-    $reasmb =~ s/[ ][?]$/?/;   # Eliminate any spaces before the question mark. 
+                $options->debug_text, scalar $options->memory->@* ));
+    }
 
     # Save the return string so that forgetful calling programs
     # can ask the bot what the last reply was. 
