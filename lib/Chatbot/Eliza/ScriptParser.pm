@@ -122,7 +122,109 @@ sub _open_script_file ($self, $script_file) {
     return @script_lines;
 }
 
-1; # End of Chatbot::Eliza2
+1;
+
+=head1 Name
+
+Chatbot::Eliza::ScriptParser
+
+=over
+
+=head1 Version
+
+Version 2.0
+
+=over
+
+=head1 Options
+
+=item script_file
+
+=item quit
+
+=item initial
+
+=item final
+
+=item decomp
+
+=item reasmb
+
+=item reasmb_for_memory
+
+=item pre
+
+=item post
+
+=item synon
+
+=item key
+
+=item unique_words
+
+=over
+
+=head1 SUBROUTINES/METHODS
+
+=head2 parse_script_data()
+    
+    $self->parse_script_data;
+    $self->parse_script_data( $script_file );
+
+parse_script_data() is invoked from the _initialize() method, which is called from 
+the new() function.  However, you can also call this method at any time against 
+an already-instantiated Eliza instance.  In that case, the new script data is I<added>
+to the old script data.  The old script data is not deleted. 
+
+You can pass a parameter to this function, which is the name of the script file, 
+and it will read in and parse that file.  If you do not pass any parameter to 
+this method, then it will read the data embedded at the end of the module as its
+default script data.  
+
+If you pass the name of a script file to parse_script_data(), and that file is 
+not available for reading, then the module dies.  
+
+=over 
+
+=head1 Format of the script file
+
+This module includes a default script file within itself, so it is not necessary 
+to explicitly specify a script file when instantiating an Eliza object. Each line 
+in the script file can specify a key, a decomposition rule, or a reassembly rule.
+
+    key: remember 5
+        decomp: * i remember *
+            reasmb: Do you often think of (2) ?
+            reasmb: Does thinking of (2) bring anything else to mind ?
+        decomp: * do you remember *
+            reasmb: Did you think I would forget (2) ?
+            reasmb: What about (2) ?
+            reasmb: goto what
+    pre: equivalent alike
+    synon: belief feel think believe wish
+
+The number after the key specifies the rank. If a user's input contains the keyword, then
+the transform() function will try to match one of the decomposition rules for that keyword.
+If one matches, then it will select one of the reassembly rules at random.  The number
+(2) here means "use whatever set of words matched the second asterisk in the decomposition
+rule." If you specify a list of synonyms for a word, the you should use a "@" when you use that
+word in a decomposition rule:
+  
+    decomp: * i @belief i *
+        reasmb: Do you really think so ?
+        reasmb: But you are not sure you (3).
+
+Otherwise, the script will never check to see if there are any synonyms for that keyword. 
+Reassembly rules should be marked with I<reasm_for_memory> rather than I<reasmb> when it is appropriate for use when a user's comment has been extracted from memory. 
+  
+    key: my 2
+        decomp: * my *
+            reasm_for_memory: Let's discuss further why your (2).
+            reasm_for_memory: Earlier you said your (2).
+            reasm_for_memory: But your (2).
+            reasm_for_memory: Does that have anything to do with the fact that your (2) ?
+
+=cut
 
 __DATA__
 initial: How do you do.  Please tell me your problem.
@@ -587,3 +689,4 @@ key: xswear 10
     reasmb: Does this topic make you feel angry ?
     reasmb: Is something making you feel angry ?
     reasmb: Does using that kind of language make you feel better ?
+

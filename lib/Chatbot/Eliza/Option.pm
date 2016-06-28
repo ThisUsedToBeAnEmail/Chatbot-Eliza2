@@ -54,4 +54,66 @@ sub welcome_message ($self) {
     return $initial->[ $self->myrand( scalar $initial->@* ) ];
 }
 
-1; # End of Chatbot::Eliza2
+1;
+
+__END__
+
+=head1 NAME
+
+Chatbot::Eliza::Options 
+
+=head1 VERSION
+
+Version 2.0
+
+=head1 Options
+
+=item name 
+
+=item script_file
+
+=item debug
+
+=item debug_text
+
+=item transform_text
+
+=item prompts_on
+
+=item memory_on
+
+=item botprompt
+
+=item userprompt
+
+=item max_memory_size
+
+=item likelihood_of_using_memory
+
+=item memory
+
+=item data
+
+=over
+
+=head1 SUBROUTINES/METHODS
+
+=head2 myrand
+
+    $bot->options->myrand(10)
+
+Generates a random number between 0 and the integer passed in.
+
+=over
+
+=head2 welcome_message
+
+    $bot->options->welcome_message
+
+Returns a greeting message.
+
+=over
+
+=over 
+
+=cut

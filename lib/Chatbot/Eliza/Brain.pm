@@ -25,22 +25,6 @@ has 'decomp_matches' => (
     default => sub { [ ] },
 );
 
-=head2 preprocess
-
-    $string = preprocess($string);
-
-preprocess() applies simple substitution rules to the input string.
-Mostly this is to catch varieties in spelling, misspellings, contractions
-and the like.
-
-preprocess() is called from within the transform() method.
-It is applied to user-input text, BEFORE any processing,
-and before a reassebly statement has been selected.
-
-It uses the array C<%pre>, which is created during the parse of the script.
-
-=cut
-
 sub preprocess ($self, $string) {
     my @orig_words = split / /, $string;
    
@@ -54,18 +38,6 @@ sub preprocess ($self, $string) {
     return split /\./, $string ;
 }
 
-=head2 postprocess
-
-    $string = postprocess($string);
-
-postprocess() applies simple substitution rules to the reassembly rule.
-This is where all the "I"'s and "you"'s are exchanged. postprocess() is
-called from within the transform() function.
-
-It uses the attribute C<%post>, created during the parse of the script.
-
-=cut
-
 sub postprocess ($self, $string) {
    if ( is_blessed_arrayref($string) ) {
        for (my $i = 1; $i < scalar $string->@*; $i++){
@@ -78,30 +50,11 @@ sub postprocess ($self, $string) {
    return $string;
 }
 
-=head2 _test_quit
-    
-     $self->_test_quit($user_input) ) { } 
-
-_test_quit detects words like "bye" and "quit" and returns true if it 
-finds one of them as the first word in the sentence.
-
-Thes words are listed in the script, under the keyword "quit".
-
-=cut
-
 sub _test_quit ($self, $string) {
     foreach my $quitword ($self->options->data->quit->@*) {
         return 1 if $string =~ m{$quitword}xms;
     }
 }
-
-=head2 _debug_memory
-
-    $self->_debug_memory
-
-_debug_memory is a special function hwihc returns the contents of Eliza's memory stack.
-
-=cut
 
 sub _debug_memory ($self) {
     my @memory = $self->options->memory->@*;
@@ -111,40 +64,6 @@ sub _debug_memory ($self) {
     }
     return $string;
 }
-
-=head2 transform
-
-    $reply = $chatterbot->transform( $string, $use_memory );
-
-transform applies transformation rules to the user input string.
-It invokes preprocess(), does transformations, then invokes postprocess.
-It returns the transformed output string, called C<$reasmb>
-
-The algorithm embedded in the transfrom method has three main parts:
-
-=item 1
-
-Searn the input string for a keyword.
-
-=item 2
-
-If we find a keyword, use the list of demoposition rules for that keyword. and pattern-match
-the input string against each rule.
-
-=item 3
-
-If the input string matches any of the decomposition rules, then randomly select one of the 
-reassembly rules for that decomposition rule, and use it to construct the reply.
-
-transform takes two parameters. The first is the string we want to transform. The second
-is a flag which indicates where this string came from. If the flag is set, then the string
-has been pulled from memory, and we should use reassemble rules appropriate for that. If
-the flag is not set then the string is the most recent user input, and we can use the ordinary reassembly rules.
-
-The memory flag is only set when the transform function is called recursively. The mechanism 
-for setting this parameter is embedded in he transform method itself. If the flag is set inappropriately, it is ignored.
-
-=cut
 
 sub transform ($self, $string, $use_memory ) {
     my ($this_decomp, $reasmbkey);
@@ -297,4 +216,100 @@ sub transform ($self, $string, $use_memory ) {
     return $reasmb;
 }
 
-1; # End of Chatbot::Eliza2
+1;
+
+__END__
+
+=head1 Name
+
+Chatbot::Eliza::Brain
+
+=head1 VERSION
+
+Version 2.0
+
+=head1 SUBROUNTINES/METHODS
+
+=head2 transform
+
+    $reply = $chatterbot->transform( $string, $use_memory );
+
+transform applies transformation rules to the user input string.
+It invokes preprocess(), does transformations, then invokes postprocess.
+It returns the transformed output string, called C<$reasmb>
+
+The algorithm embedded in the transfrom method has three main parts:
+
+=item 1
+
+Searn the input string for a keyword.
+
+=item 2
+
+If we find a keyword, use the list of demoposition rules for that keyword. and pattern-match
+the input string against each rule.
+
+=item 3
+
+If the input string matches any of the decomposition rules, then randomly select one of the 
+reassembly rules for that decomposition rule, and use it to construct the reply.
+
+transform takes two parameters. The first is the string we want to transform. The second
+is a flag which indicates where this string came from. If the flag is set, then the string
+has been pulled from memory, and we should use reassemble rules appropriate for that. If
+the flag is not set then the string is the most recent user input, and we can use the ordinary reassembly rules.
+
+The memory flag is only set when the transform function is called recursively. The mechanism 
+for setting this parameter is embedded in he transform method itself. If the flag is set inappropriately, it is ignored.
+
+=over
+
+=head2 preprocess
+
+    $string = preprocess($string);
+
+preprocess() applies simple substitution rules to the input string.
+Mostly this is to catch varieties in spelling, misspellings, contractions
+and the like.
+
+preprocess() is called from within the transform() method.
+It is applied to user-input text, BEFORE any processing,
+and before a reassebly statement has been selected.
+
+It uses the array C<%pre>, which is created during the parse of the script.
+
+=over
+
+=head2 postprocess
+
+    $string = postprocess($string);
+
+postprocess() applies simple substitution rules to the reassembly rule.
+This is where all the "I"'s and "you"'s are exchanged. postprocess() is
+called from within the transform() function.
+
+It uses the attribute C<%post>, created during the parse of the script.
+
+=over
+
+=head2 _test_quit
+    
+     $self->_test_quit($user_input) ) { } 
+
+_test_quit detects words like "bye" and "quit" and returns true if it 
+finds one of them as the first word in the sentence.
+
+Thes words are listed in the script, under the keyword "quit".
+
+=over
+
+=head2 _debug_memory
+
+    $self->_debug_memory
+
+_debug_memory is a special function hwihc returns the contents of Eliza's memory stack.
+
+=over
+
+=cut
+
