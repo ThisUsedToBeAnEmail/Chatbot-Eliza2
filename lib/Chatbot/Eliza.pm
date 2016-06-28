@@ -203,7 +203,7 @@ Turn memory off - 0.
 
 =back
 
-=head1 SUBROUNTINES/METHODS
+=head1 SUBROUTINES/METHODS
 
 =head2 command_interface
 

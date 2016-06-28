@@ -228,7 +228,7 @@ Chatbot::Eliza::Brain
 
 Version 2.0
 
-=head1 SUBROUNTINES/METHODS
+=head1 SUBROUTINES/METHODS
 
 =head2 transform
 

@@ -71,7 +71,7 @@ You can pass the following options into Chatbot
 
     Turn memory off - 0.
 
-# SUBROUNTINES/METHODS
+# SUBROUTINES/METHODS
 
 ## command\_interface
 
