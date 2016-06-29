@@ -1,7 +1,5 @@
 package Chatbot::Eliza::Brain;
 
-use v5.24;
-
 use Moo;
 use Ref::Util qw(is_scalarref is_blessed_arrayref);
 use experimental qw[
@@ -27,15 +25,17 @@ has 'decomp_matches' => (
 
 sub preprocess ($self, $string) {
     my @orig_words = split / /, $string;
-   
+    use Data::Dumper;
     my @converted_words;
     foreach my $word ( @orig_words ) {
         #TODO: add some kind of spell check against unique words
-
-        push @converted_words, $word =~ s{[?!,]|but}{.}g;
+        $word =~ s{[?!,]|but}{.}g;
+        push @converted_words, $word; 
     }
+
     my $formated = join ' ', @converted_words;
-    return split /\./, $string ;
+    @converted_words = split /\./, $formated;
+    return @converted_words;
 }
 
 sub postprocess ($self, $string) {
@@ -44,7 +44,7 @@ sub postprocess ($self, $string) {
             $string->[$i] =~ s/([,;?!]|\.*)$//;
         }
    } elsif ( is_scalarref(\$string) ) {
-        $string =~ tr/ / /s;       # Eliminate any duplicate space characters. 
+        $string =~ tr/  / /s;       # Eliminate any duplicate space characters. 
         $string =~ s/[ ][?]$/?/;   # Eliminate any spaces before the question mark. 
    }
    return $string;

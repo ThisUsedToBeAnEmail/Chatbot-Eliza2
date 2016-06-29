@@ -12,36 +12,32 @@ BEGIN {
 }
 # doesn't store memory so it's actually pretty useless
 
-subtest 'test_postprocess' => sub {
-	test_postprocess({
-		text => 'hello world',			
+subtest 'test_postprocess_scala' => sub {
+	test_postprocess_scala({
+		text => 'hello  world',			
 	    expected => 'hello world',			
     });
-	test_postprocess({
-		text => 'hello recolect',			
+	test_postprocess_scala({
+		text => 'hello  recollect',			
 	    expected => 'hello recollect',			
     });
-	test_postprocess({
-		text => 'eliza goodbye',			
-	    expected => 'eliza goodbye',			
+	test_postprocess_scala({
+		text => 'eliza goodbye ?',			
+	    expected => 'eliza goodbye?',			
     });
-	test_postprocess({
-		text => 'done certainle',			
-	    expected => 'done certainly',			
+	test_postprocess_scala({
+		text => 'done certainly   ?',			
+	    expected => 'done certainly?',			
     });
-	test_postprocess({
-		text => 'maybr',			
-	    expected => 'maybe',			
+	test_postprocess_scala({
+		text => 'maybe ? something',			
+	    expected => 'maybe ? something',			
     });
-	test_postprocess({
-		text => 'machynes',
-        expected => 'machines',			
-	});
 };
 
 done_testing();
 
-sub test_postprocess {
+sub test_postprocess_scala {
 	my $args = shift;
 
     my $options = Chatbot::Eliza::Option->new();

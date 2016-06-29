@@ -5,6 +5,7 @@ use warnings;
 use Chatbot::Eliza;
 use Test::More 0.88;
 use feature 'say';
+use Array::Utils qw(array_diff);
 
 BEGIN {
 	use_ok( 'Chatbot::Eliza::Option' ) || print "Bail out!\n";
@@ -14,29 +15,25 @@ BEGIN {
 
 subtest 'say goodbye in multiple ways' => sub {
 	test_preprocess({
-		text => 'hello world',			
-	    expected => 'hello world',			
+		text => 'hello world!',			
+	    expected => ['hello world'],			
     });
 	test_preprocess({
-		text => 'hello recolect',			
-	    expected => 'hello recollect',			
+		text => 'hello recollect?',			
+	    expected => ['hello recollect'],			
     });
 	test_preprocess({
-		text => 'eliza goodbye',			
-	    expected => 'eliza goodbye',			
+		text => 'eliza but goodbye',			
+	    expected => ['eliza ', ' goodbye'],			
     });
 	test_preprocess({
-		text => 'done certainle',			
-	    expected => 'done certainly',			
+		text => 'done certainly,',			
+	    expected => ['done certainly'],			
     });
 	test_preprocess({
-		text => 'maybr',			
-	    expected => 'maybe',			
+		text => 'sometext ? which ! is , everything',			
+	    expected => ['sometext ', ' which ', ' is ', ' everything'],			
     });
-	test_preprocess({
-		text => 'machynes',
-        expected => 'machines',			
-	});
 };
 
 done_testing();
@@ -46,10 +43,14 @@ sub test_preprocess {
 
     my $options = Chatbot::Eliza::Option->new();
     my $eliza = Chatbot::Eliza::Brain->new(options => $options);
-	my $reply = $eliza->preprocess($args->{text});
+	my @reply = $eliza->preprocess($args->{text});
 	# reply will always have a value
-	ok($reply);
-	is($reply, $args->{expected}, "we went through preprocess - $reply");
+	ok(@reply);
+    if ( !array_diff(@reply, $args->{expected}->@*) ) {
+        pass("We went through preprocess $args->{expected}");
+    } else {
+        fail("Our arrays do not match $args->{expected}");
+    }
 };
 
 1;

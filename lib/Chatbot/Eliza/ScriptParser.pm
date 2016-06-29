@@ -1,9 +1,7 @@
 package Chatbot::Eliza::ScriptParser;
 
-use v5.24;
-
 use Moo;
-use Syntax::Keyword::Junction qw(any);
+
 use feature 'say';
 use experimental qw[
     signatures

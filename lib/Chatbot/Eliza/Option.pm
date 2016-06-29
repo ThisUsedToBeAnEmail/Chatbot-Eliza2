@@ -1,7 +1,5 @@
 package Chatbot::Eliza::Option;
 
-use v5.24;
-
 use Moo;
 use Chatbot::Eliza::ScriptParser;
 

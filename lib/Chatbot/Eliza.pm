@@ -1,6 +1,5 @@
 package Chatbot::Eliza;
 
-use v5.24;
 use strict;
 use warnings;
 
